@@ -1,0 +1,5 @@
+{
+  "name": "PowerCast AI: Load Forecasting & Decision Support",
+  "description": "An end-to-end AI-driven power system application for electrical load forecasting, unit commitment, and maintenance planning using Savitzky–Golay smoothing and LSTM-based inference.",
+  "requestFramePermissions": []
+}

@@ -1,5 +1,6 @@
 
 export type HorizonUnit = 'hours' | 'days' | 'years';
+export type ConfidenceLevel = '80%' | '90%' | '95%';
 
 export interface LoadDataPoint {
   timestamp: string;
@@ -18,6 +19,18 @@ export interface GeneratorUnit {
   status: 'ON' | 'OFF';
 }
 
+export interface WeatherData {
+  temperature: number;      // °C
+  humidity: number;          // %
+  windSpeed: number;         // m/s
+  cloudCover: number;        // %
+  description: string;       // e.g. "partly cloudy"
+  icon: string;              // OpenWeatherMap icon code
+  feelsLike: number;         // °C
+  pressure: number;          // hPa
+  lastUpdated: string;       // ISO timestamp
+}
+
 export interface UpgradeRecommendation {
   additionalUnitsNeeded: number;
   targetTotalCapacity: number;
@@ -32,6 +45,30 @@ export interface MaintenanceSchedule {
   avgLoadDuringWindow: number;
   safetyMargin: number; // Percent of capacity remaining during maintenance
   priority: 'Routine' | 'Deferred' | 'Urgent';
+}
+
+export interface DecisionRecommendation {
+  unitId: string;
+  unitName: string;
+  action: 'ON' | 'OFF' | 'STANDBY';
+  reason: string;
+  priority: 'High' | 'Medium' | 'Low';
+  loadPercentage: number;   // how much of capacity is needed
+}
+
+export interface MaintenanceWindow {
+  start: string;
+  end: string;
+  suggestedUnit: string;
+  avgLoad: number;
+  safetyMarginPercent: number;
+}
+
+export interface DecisionResult {
+  recommendations: DecisionRecommendation[];
+  maintenanceOpportunities: MaintenanceWindow[];
+  overallStatus: 'Normal' | 'Warning' | 'Critical';
+  summary: string;
 }
 
 export interface ForecastResult {
@@ -54,4 +91,9 @@ export interface AppState {
   units: GeneratorUnit[];
   isProcessing: boolean;
   results: ForecastResult | null;
+  weatherData: WeatherData | null;
+  weatherLoading: boolean;
+  weatherError: string | null;
+  decisions: DecisionResult | null;
+  confidenceLevel: ConfidenceLevel;
 }

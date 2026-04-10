@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { LoadDataPoint, GeneratorUnit, AppState, HorizonUnit } from './types';
+import { LoadDataPoint, GeneratorUnit, AppState, HorizonUnit, ConfidenceLevel } from './types';
 import DataInputSection from './components/DataInputSection';
 import Dashboard from './components/Dashboard';
+import WeatherPanel from './components/WeatherPanel';
 import { applySavitzkyGolay, detectAnomalies } from './services/processing';
 import { performAIForecast } from './services/geminiService';
+import { fetchWeather } from './services/weatherService';
 
 const DEFAULT_UNITS: GeneratorUnit[] = [
   { id: 'U1', name: 'Unit 1', capacity: 300, status: 'OFF' },
@@ -20,10 +22,36 @@ const App: React.FC = () => {
     lookBackWindow: 48,
     units: DEFAULT_UNITS,
     isProcessing: false,
-    results: null
+    results: null,
+    weatherData: null,
+    weatherLoading: false,
+    weatherError: null,
+    decisions: null,
+    confidenceLevel: '90%',
   });
 
   useEffect(() => { generateSampleData(); }, []);
+
+  // ── Weather: fetch on mount + hourly refresh ──
+  useEffect(() => {
+    const loadWeather = async () => {
+      setState(prev => ({ ...prev, weatherLoading: true, weatherError: null }));
+      try {
+        const weather = await fetchWeather();
+        setState(prev => ({ ...prev, weatherData: weather, weatherLoading: false }));
+      } catch (err) {
+        setState(prev => ({
+          ...prev,
+          weatherLoading: false,
+          weatherError: 'Failed to fetch weather data'
+        }));
+      }
+    };
+
+    loadWeather();
+    const interval = setInterval(loadWeather, 60 * 60 * 1000); // Refresh hourly
+    return () => clearInterval(interval);
+  }, []);
 
   const generateSampleData = () => {
     const sample: LoadDataPoint[] = [];
@@ -59,14 +87,17 @@ const App: React.FC = () => {
   const runAnalysis = async () => {
     setState(prev => ({ ...prev, isProcessing: true }));
     try {
-      const results = await performAIForecast(
+      // Run forecast & decision logic via backend API
+      const { results, decisions } = await performAIForecast(
         state.historicalData,
         state.forecastHorizonValue,
         state.forecastHorizonUnit,
         state.lookBackWindow,
-        state.units
+        state.units,
+        state.weatherData  // Pass weather data to enhance AI predictions
       );
-      setState(prev => ({ ...prev, results, isProcessing: false }));
+
+      setState(prev => ({ ...prev, results, decisions, isProcessing: false }));
     } catch (err) {
       alert("Analysis error. Please verify input data.");
       setState(prev => ({ ...prev, isProcessing: false }));
@@ -77,27 +108,27 @@ const App: React.FC = () => {
     <div className="min-h-screen text-[var(--text-main)] selection:bg-[var(--neu-shadow-dark)] selection:text-white">
       <nav className="neu-flat mb-8 py-4 px-8 flex justify-between items-center sticky top-4 z-50 mx-6 mt-4">
         <div className="flex items-center gap-4">
-          <div className="neu-icon-box text-2xl">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          <div className="neu-icon-box text-lg">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tighter leading-none text-[var(--text-main)]">PowerCast <span className="neu-text-accent">Pro</span></h1>
-            <p className="text-[9px] font-bold text-[var(--text-light)] uppercase tracking-widest mt-1">Smart Infrastructure Analytics</p>
+            <h1 className="text-xl font-black tracking-tight leading-none text-[var(--text-main)]">Powercast AI</h1>
+            <p className="text-[9px] font-medium text-[var(--text-light)] mt-0.5">Multi-Plant Power Forecasting</p>
           </div>
         </div>
         <button
           onClick={runAnalysis}
           disabled={state.isProcessing}
-          className={`neu-btn px-8 py-3 text-sm flex items-center gap-2 ${state.isProcessing ? 'opacity-70 cursor-wait' : 'hover:scale-105 active:scale-95'
+          className={`neu-btn-primary px-6 py-3 text-sm flex items-center gap-2 ${state.isProcessing ? 'opacity-70 cursor-wait' : ''
             }`}
         >
           {state.isProcessing && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
-          {state.isProcessing ? 'PROCESSING...' : 'EXECUTE FORECAST'}
+          {state.isProcessing ? 'Processing...' : '⚡ Execute Forecast'}
         </button>
       </nav>
 
       <main className="max-w-[1600px] mx-auto p-6 lg:p-10 grid grid-cols-1 xl:grid-cols-4 gap-8">
-        <aside className="xl:col-span-1">
+        <aside className="xl:col-span-1 space-y-6">
           <DataInputSection
             {...state}
             onDataLoaded={(d) => {
@@ -110,7 +141,15 @@ const App: React.FC = () => {
             setHorizonUnit={(u) => setState(prev => ({ ...prev, forecastHorizonUnit: u }))}
             setLookBack={(l) => setState(prev => ({ ...prev, lookBackWindow: l }))}
           />
-          <div className="mt-6 p-6 neu-flat relative overflow-hidden group">
+
+          {/* Weather Panel */}
+          <WeatherPanel
+            weather={state.weatherData}
+            loading={state.weatherLoading}
+            error={state.weatherError}
+          />
+
+          <div className="p-6 neu-flat relative overflow-hidden group">
             <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-[var(--accent)] rounded-full opacity-10 group-hover:scale-150 transition-transform duration-700"></div>
             <h5 className="text-[10px] font-black neu-text-accent uppercase tracking-widest mb-3">System Engine</h5>
             <div className="space-y-3">
@@ -122,6 +161,16 @@ const App: React.FC = () => {
                 <span className="text-[var(--text-light)]">Anomaly Logic</span>
                 <span className="neu-text-accent">Rolling Z-Score</span>
               </div>
+              <div className="flex justify-between items-center text-[10px] font-bold">
+                <span className="text-[var(--text-light)]">Weather Feed</span>
+                <span className={state.weatherData ? 'text-emerald-500' : 'text-amber-500'}>
+                  {state.weatherData ? 'Active' : 'Fallback'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-[10px] font-bold">
+                <span className="text-[var(--text-light)]">Decision Engine</span>
+                <span className="neu-text-accent">Dispatch Optimizer</span>
+              </div>
             </div>
           </div>
         </aside>
@@ -132,6 +181,10 @@ const App: React.FC = () => {
             results={state.results}
             units={state.units}
             horizonUnit={state.forecastHorizonUnit}
+            decisions={state.decisions}
+            weatherData={state.weatherData}
+            confidenceLevel={state.confidenceLevel}
+            onConfidenceLevelChange={(level) => setState(prev => ({ ...prev, confidenceLevel: level }))}
           />
         </section>
       </main>

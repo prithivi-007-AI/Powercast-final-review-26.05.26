@@ -1,6 +1,6 @@
-
 export type HorizonUnit = 'hours' | 'days' | 'years';
 export type ConfidenceLevel = '80%' | '90%' | '95%';
+export type PlantType = 'Solar' | 'Wind' | 'Hydro' | 'Thermal' | 'Nuclear' | 'Hybrid';
 
 export interface LoadDataPoint {
   timestamp: string;
@@ -17,18 +17,22 @@ export interface GeneratorUnit {
   name: string;
   capacity: number;
   status: 'ON' | 'OFF';
+  type: PlantType;
+  efficiency: number;   // 0-100%
+  fuelCost: number;     // ₹ per MWh
 }
 
 export interface WeatherData {
-  temperature: number;      // °C
-  humidity: number;          // %
-  windSpeed: number;         // m/s
-  cloudCover: number;        // %
-  description: string;       // e.g. "partly cloudy"
-  icon: string;              // OpenWeatherMap icon code
-  feelsLike: number;         // °C
-  pressure: number;          // hPa
-  lastUpdated: string;       // ISO timestamp
+  temperature: number;     // °C
+  humidity: number;        // %
+  windSpeed: number;       // m/s
+  cloudCover: number;      // %
+  description: string;
+  icon: string;
+  feelsLike: number;       // °C
+  pressure: number;        // hPa
+  irradiance?: number;     // W/m² shortwave radiation (for solar forecasting)
+  lastUpdated: string;     // ISO timestamp
 }
 
 export interface UpgradeRecommendation {
@@ -43,7 +47,7 @@ export interface MaintenanceSchedule {
   end: string;
   suggestedUnit: string;
   avgLoadDuringWindow: number;
-  safetyMargin: number; // Percent of capacity remaining during maintenance
+  safetyMargin: number;
   priority: 'Routine' | 'Deferred' | 'Urgent';
 }
 
@@ -53,7 +57,10 @@ export interface DecisionRecommendation {
   action: 'ON' | 'OFF' | 'STANDBY';
   reason: string;
   priority: 'High' | 'Medium' | 'Low';
-  loadPercentage: number;   // how much of capacity is needed
+  loadPercentage: number;
+  confidence: number;             // 0-100% confidence score
+  renewableContribution: number;  // % of demand covered by renewables
+  estimatedSavings: number;       // ₹/hr savings vs baseline
 }
 
 export interface MaintenanceWindow {
@@ -62,6 +69,8 @@ export interface MaintenanceWindow {
   suggestedUnit: string;
   avgLoad: number;
   safetyMarginPercent: number;
+  reason: string;
+  operationalBenefit: string;
 }
 
 export interface DecisionResult {
@@ -69,6 +78,8 @@ export interface DecisionResult {
   maintenanceOpportunities: MaintenanceWindow[];
   overallStatus: 'Normal' | 'Warning' | 'Critical';
   summary: string;
+  renewablePercent: number;        // Overall renewable % of fleet
+  totalEstimatedSavings: number;   // ₹/hr total savings
 }
 
 export interface ForecastResult {
@@ -78,17 +89,25 @@ export interface ForecastResult {
   maintenanceWindows: MaintenanceSchedule[];
   explanation: string;
   upgradeAdvisory?: UpgradeRecommendation;
-  // Economic Metrics
   projectedCostPerHour: number;
   systemEfficiency: number; // 0-100
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  isStreaming?: boolean;
 }
 
 export interface AppState {
   historicalData: LoadDataPoint[];
   forecastHorizonValue: number;
   forecastHorizonUnit: HorizonUnit;
-  lookBackWindow: number; 
+  lookBackWindow: number;
   units: GeneratorUnit[];
+  plantType: PlantType;
   isProcessing: boolean;
   results: ForecastResult | null;
   weatherData: WeatherData | null;

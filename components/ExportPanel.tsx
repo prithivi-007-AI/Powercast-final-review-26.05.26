@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ForecastResult, WeatherData, DecisionResult } from '../types';
+import { ForecastResult, WeatherData, DecisionResult, GeneratorUnit, LoadDataPoint } from '../types';
 import { exportCSV, exportPDF } from '../services/exportService';
 
 // ============================================================================
@@ -12,22 +12,29 @@ interface Props {
   forecast: ForecastResult | null;
   decisions: DecisionResult | null;
   weather: WeatherData | null;
+  units: GeneratorUnit[];
+  historicalData: LoadDataPoint[];
 }
 
-const ExportPanel: React.FC<Props> = ({ forecast, decisions, weather }) => {
+const ExportPanel: React.FC<Props> = ({ forecast, decisions, weather, units, historicalData }) => {
   const [pdfLoading, setPdfLoading] = useState(false);
   const disabled = !forecast;
 
-  const handleCSV = () => {
+  const handleCSV = async () => {
     if (!forecast) return;
-    exportCSV(forecast, decisions, weather);
+    try {
+      await exportCSV(forecast, decisions, weather, units, historicalData);
+    } catch (err) {
+      console.error('CSV export failed:', err);
+      alert('CSV export failed.');
+    }
   };
 
   const handlePDF = async () => {
     if (!forecast) return;
     setPdfLoading(true);
     try {
-      await exportPDF(forecast, decisions, weather);
+      await exportPDF(forecast, decisions, weather, units, historicalData);
     } catch (err) {
       console.error('PDF generation failed:', err);
       alert('PDF generation failed. Please try CSV export instead.');

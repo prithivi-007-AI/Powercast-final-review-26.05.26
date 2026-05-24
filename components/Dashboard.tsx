@@ -159,7 +159,7 @@ const Dashboard: React.FC<Props> = ({
           <div className="flex items-center gap-4">
             <h3 className="text-lg font-bold text-[var(--text-main)] tracking-tight">Load Projection Profile</h3>
             {/* Export buttons */}
-            <ExportPanel forecast={results} decisions={decisions} weather={weatherData} />
+            <ExportPanel forecast={results} decisions={decisions} weather={weatherData} units={units} historicalData={historicalData} />
           </div>
           <div className="flex items-center gap-4">
             {/* Confidence Level Toggle */}

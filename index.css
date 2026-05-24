@@ -8,10 +8,10 @@
   --accent-success: #22c55e;
   --accent-warning: #f59e0b;
   --accent-danger: #ef4444;
-  
+
   --neu-shadow-light: #ffffff;
   --neu-shadow-dark: #c8d0dc;
-  
+
   --shadow-flat: 8px 8px 16px var(--neu-shadow-dark), -8px -8px 16px var(--neu-shadow-light);
   --shadow-pressed: inset 4px 4px 8px var(--neu-shadow-dark), inset -4px -4px 8px var(--neu-shadow-light);
   --shadow-icon: 5px 5px 10px var(--neu-shadow-dark), -5px -5px 10px var(--neu-shadow-light);
@@ -27,7 +27,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Neumorphic Utilities — matching original Powercast design */
+/* ── Neumorphic Utilities ── */
 .neu-flat {
   background: var(--bg-color);
   box-shadow: var(--shadow-flat);
@@ -42,7 +42,6 @@ body {
   border: 1px solid rgba(255,255,255,0.2);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
-
 .neu-raised:hover {
   box-shadow: 10px 10px 20px var(--neu-shadow-dark), -10px -10px 20px var(--neu-shadow-light);
 }
@@ -73,12 +72,10 @@ body {
   align-items: center;
   justify-content: center;
 }
-
 .neu-btn:hover {
   transform: translateY(-2px);
   box-shadow: 10px 10px 20px var(--neu-shadow-dark), -10px -10px 20px var(--neu-shadow-light);
 }
-
 .neu-btn:active, .neu-btn.active {
   transform: translateY(0);
   box-shadow: var(--shadow-pressed);
@@ -97,7 +94,6 @@ body {
   box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
   transition: all 0.2s ease;
 }
-
 .neu-btn-primary:hover {
   background: var(--accent-hover);
   transform: translateY(-1px);
@@ -131,37 +127,73 @@ body {
   font-weight: 500;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ── Plant Type Button ── */
+.plant-type-btn {
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+.plant-type-btn:hover {
+  transform: translateY(-1px);
 }
-::-webkit-scrollbar-thumb {
-  background: var(--neu-shadow-dark);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #aab2bd;
+.plant-type-btn:active {
+  transform: translateY(0);
 }
 
-/* Animations */
+/* ── Confidence Bar ── */
+.confidence-bar {
+  height: 6px;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: var(--neu-shadow-dark);
+}
+.confidence-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.7s ease;
+}
+
+/* ── Shimmer loading animation (for weather card) ── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-color) 25%,
+    rgba(255,255,255,0.5) 50%,
+    var(--bg-color) 75%
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+/* ── Chatbot slide-in animation ── */
+@keyframes chatSlideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);     }
+}
+@keyframes chatPulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.05); }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar           { width: 6px; height: 6px; }
+::-webkit-scrollbar-track     { background: transparent; }
+::-webkit-scrollbar-thumb     { background: var(--neu-shadow-dark); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #aab2bd; }
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+
+/* ── Core animations ── */
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
-
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
-}
-
-.animate-slide-up {
-  animation: slideUp 0.3s ease-out;
-}
+.animate-fade-in  { animation: fadeIn  0.3s ease-out; }
+.animate-slide-up { animation: slideUp 0.25s ease-out; }
